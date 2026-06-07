@@ -1,0 +1,64 @@
+name: Release
+
+# Publishes to crates.io when a version tag (e.g. v0.1.0) is pushed.
+#
+# Authentication uses crates.io Trusted Publishing (OIDC) — no long-lived
+# token is stored in repo secrets. One-time setup on crates.io:
+#   Crate → Settings → Trusted Publishing → add a GitHub publisher with
+#     Repository owner: richardwooding
+#     Repository name:  gitmeta-rs
+#     Workflow filename: release.yml
+#     Environment:       release
+#
+# Note: a brand-new crate name must be claimed by an initial `cargo publish`
+# (with a token) before a trusted publisher can be configured for it.
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      # Required for the OIDC token exchange with crates.io.
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify tag matches Cargo.toml and check crates.io
+        id: check
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          name="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')"
+          manifest="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
+          if [ "$tag" != "$manifest" ]; then
+            echo "::error::Tag v$tag does not match Cargo.toml version $manifest"
+            exit 1
+          fi
+          # Idempotency: skip publishing if this version is already on crates.io
+          # (e.g. the initial v0.1.0 was published locally to claim the name).
+          code="$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "User-Agent: ${name}-release (github actions)" \
+            "https://crates.io/api/v1/crates/${name}/${manifest}")"
+          if [ "$code" = "200" ]; then
+            echo "::notice::${name} ${manifest} already published — skipping."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Releasing ${name} ${manifest}"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Authenticate to crates.io (Trusted Publishing)
+        if: steps.check.outputs.publish == 'true'
+        uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+      - name: Publish
+        if: steps.check.outputs.publish == 'true'
+        run: cargo publish --locked --token ${{ steps.auth.outputs.token }}
