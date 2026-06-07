@@ -39,11 +39,14 @@ jobs:
           git config --global user.email ci@example.com
           git config --global user.name CI
       - name: Build (all features)
-        run: cargo build --all-features
+        # --locked enforces the committed Cargo.lock so the MSRV job resolves
+        # the same dependency versions we pin for Rust 1.79 (e.g. getrandom
+        # 0.3, since 0.4 requires edition2024 / Cargo 1.85+).
+        run: cargo build --all-features --locked
       - name: Test (default features)
-        run: cargo test
+        run: cargo test --locked
       - name: Test (all features)
-        run: cargo test --all-features
+        run: cargo test --all-features --locked
 
   lint:
     name: Lint
@@ -57,4 +60,4 @@ jobs:
       - name: rustfmt
         run: cargo fmt --check
       - name: clippy
-        run: cargo clippy --all-features --all-targets -- -D warnings
+        run: cargo clippy --all-features --all-targets --locked -- -D warnings
