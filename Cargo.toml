@@ -1,0 +1,27 @@
+[package]
+name = "gitmeta"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.79"
+license = "MIT"
+description = "Fast per-file git metadata (last-commit time/author/subject, churn, tracked/ignored) resolved by scanning a working tree once."
+repository = "https://github.com/richardwooding/gitmeta-rs"
+readme = "README.md"
+keywords = ["git", "metadata", "vcs", "blame", "churn"]
+categories = ["development-tools"]
+
+[dependencies]
+thiserror = "2"
+jiff = "0.2"
+tokio = { version = "1", features = ["process", "rt"], optional = true }
+
+[features]
+default = []
+tokio = ["dep:tokio"]
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["process", "rt", "rt-multi-thread", "macros", "time"] }
+
+[package.metadata.docs.rs]
+all-features = true
