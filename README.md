@@ -3,6 +3,8 @@
 [![CI](https://github.com/richardwooding/gitmeta-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/richardwooding/gitmeta-rs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**Website:** [richardwooding.github.io/gitmeta-rs](https://richardwooding.github.io/gitmeta-rs/)
+
 Fast **per-file git metadata** for Rust — last-commit time / author / subject, first-seen,
 commit count (churn), and tracked / ignored status — resolved by scanning a working tree
 **once** and answering per-path lookups in constant time. Shells out to the system `git`
